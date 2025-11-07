@@ -24,7 +24,7 @@ export default function Bienvenida({ navigation }) {
         {/* Logo Container */}
         <View style={styles.logoContainer}>
           <Image
-            source={require('../assets/LogoPetstyle.jpg')} 
+            source={require('assets/PetStyle-icon.png')} 
             style={styles.logoImage}
             resizeMode="cover"
           />

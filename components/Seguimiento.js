@@ -15,17 +15,8 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import * as Notifications from 'expo-notifications';
 import { doc, onSnapshot, collection, query, where, getDocs } from 'firebase/firestore';
 import { db, auth } from '../Config/firebase';
-
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
 
 const Seguimiento = ({ navigation, route }) => {
   const SALON_INFO = {
@@ -38,7 +29,6 @@ const Seguimiento = ({ navigation, route }) => {
 
   const [citaId, setCitaId] = useState(route?.params?.citaId || null);
   const [usuarioId, setUsuarioId] = useState('');
-  
   const [citaData, setCitaData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [citaCompletada, setCitaCompletada] = useState(false);
@@ -63,284 +53,154 @@ const Seguimiento = ({ navigation, route }) => {
     'Tratamiento': { icono: 'medical', color: '#795548' },
   };
 
-  // Obtener fecha de hoy en formato ISO
+  // 🔹 Obtener fecha de hoy en formato ISO
   const obtenerFechaHoyISO = () => {
     const hoy = new Date();
-    const año = hoy.getFullYear();
-    const mes = String(hoy.getMonth() + 1).padStart(2, '0');
-    const dia = String(hoy.getDate()).padStart(2, '0');
-    return `${año}-${mes}-${dia}`;
+    return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
   };
 
-  // Calcular días hasta la cita
+  // 🔹 Calcular días hasta la cita
   const calcularDiasHastaCita = (fechaISO) => {
     if (!fechaISO) return null;
-    
     try {
       const [año, mes, dia] = fechaISO.split('-');
       const fechaCitaDate = new Date(año, mes - 1, dia);
       fechaCitaDate.setHours(0, 0, 0, 0);
-      
       const hoy = new Date();
       hoy.setHours(0, 0, 0, 0);
-      
-      const diferenciaDias = Math.floor((fechaCitaDate - hoy) / (1000 * 60 * 60 * 24));
-      return diferenciaDias;
-    } catch (error) {
-      console.error('❌ Error calculando días:', error);
+      return Math.floor((fechaCitaDate - hoy) / (1000 * 60 * 60 * 24));
+    } catch {
       return null;
     }
   };
 
-  // Formatear fecha para mostrar
+  // 🔹 Formatear fecha para mostrar
   const formatearFechaDisplay = (fechaISO) => {
     if (!fechaISO) return 'Fecha no disponible';
-    
     try {
       const [año, mes, dia] = fechaISO.split('-');
       const fecha = new Date(año, mes - 1, dia);
-      
-      const opciones = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-      return fecha.toLocaleDateString('es', opciones);
-    } catch (error) {
-      console.error('❌ Error formateando fecha:', error);
+      return fecha.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    } catch {
       return fechaISO;
     }
   };
 
-  // Buscar cita más cercana
+  // 🔹 Buscar cita más cercana
   const buscarCitaMasCercana = async (userId) => {
     try {
-      console.log('🔍 Buscando citas para usuario:', userId);
-      
       const citasRef = collection(db, 'citas');
-      const q = query(
-        citasRef,
-        where('usuario_id', '==', userId)
-      );
-
+      const q = query(citasRef, where('usuario_id', '==', userId));
       const querySnapshot = await getDocs(q);
-      console.log('📋 Citas encontradas:', querySnapshot.size);
-      
-      if (querySnapshot.empty) {
-        console.log('⚠️ No hay citas');
-        return null;
-      }
+      if (querySnapshot.empty) return null;
 
       const citasFuturas = [];
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        
-        if (data.estado === 'cancelada') {
-          return;
-        }
-        
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (data.estado === 'cancelada') return;
         const diasHasta = calcularDiasHastaCita(data.fecha);
-        
         if (diasHasta !== null && diasHasta >= 0) {
-          citasFuturas.push({
-            id: doc.id,
-            ...data,
-            diasHasta
-          });
+          citasFuturas.push({ id: docSnap.id, ...data, diasHasta });
         }
       });
 
-      if (citasFuturas.length === 0) {
-        console.log('⚠️ No hay citas futuras');
-        return null;
-      }
-
+      if (citasFuturas.length === 0) return null;
       citasFuturas.sort((a, b) => a.diasHasta - b.diasHasta);
-      
-      const citaMasCercana = citasFuturas[0];
-      console.log('✅ Cita más cercana:', citaMasCercana.id, 'En', citaMasCercana.diasHasta, 'días');
-      
-      return citaMasCercana;
-      
-    } catch (error) {
-      console.error('❌ Error buscando cita:', error);
+      return citasFuturas[0];
+    } catch {
       return null;
     }
   };
 
-  // Calcular progreso basado en servicios
+  // 🔹 Calcular progreso
   const calcularProgreso = (estados_servicios, servicios) => {
-    if (!servicios || servicios.length === 0) return 0;
-    if (!estados_servicios) return 0;
-    
-    const completados = servicios.filter(s => 
-      estados_servicios[s] === 'completado'
-    ).length;
-    
+    if (!servicios?.length) return 0;
+    const completados = servicios.filter((s) => estados_servicios?.[s] === 'completado').length;
     return Math.round((completados / servicios.length) * 100);
   };
 
-  // Inicializar componente
+  // 🔹 Inicializar componente
   const inicializarComponente = async () => {
     try {
-      console.log('🚀 Iniciando seguimiento...');
-      
       const currentUser = auth.currentUser;
-      
       if (!currentUser) {
-        console.error('❌ No hay usuario autenticado');
         Alert.alert('Error', 'Por favor inicia sesión nuevamente');
         setLoading(false);
         return;
       }
-      
       const userId = currentUser.uid;
       setUsuarioId(userId);
-      console.log('✅ Usuario:', userId);
 
       const cita = await buscarCitaMasCercana(userId);
-      
       if (!cita) {
-        console.log('⚠️ No hay citas futuras');
-        setDiasHastaCita(null);
         setCitaData(null);
+        setDiasHastaCita(null);
         setLoading(false);
         return;
       }
 
-      console.log('✅ Cita encontrada:', cita.id);
       setCitaId(cita.id);
       setCitaData(cita);
-      
-      const dias = cita.diasHasta;
-      setDiasHastaCita(dias);
-      
-      if (dias === 0) {
-        setMensajeFecha('');
-      } else if (dias === 1) {
-        setMensajeFecha('mañana');
-      } else if (dias === 2) {
-        setMensajeFecha('pasado mañana');
-      } else if (dias > 2) {
-        setMensajeFecha(`en ${dias} días`);
-      }
-      
+      setDiasHastaCita(cita.diasHasta);
+
+      if (cita.diasHasta === 0) setMensajeFecha('');
+      else if (cita.diasHasta === 1) setMensajeFecha('mañana');
+      else if (cita.diasHasta === 2) setMensajeFecha('pasado mañana');
+      else if (cita.diasHasta > 2) setMensajeFecha(`en ${cita.diasHasta} días`);
+
       sincronizarEstadoRealTime(cita.id);
-      
       setLoading(false);
-      
-    } catch (error) {
-      console.error('❌ Error en inicialización:', error);
+    } catch {
       Alert.alert('Error', 'No se pudo cargar el seguimiento');
       setLoading(false);
     }
   };
 
-  // Sincronizar en tiempo real
+  // 🔹 Sincronizar en tiempo real
   const sincronizarEstadoRealTime = (citaIdParam) => {
     if (!citaIdParam) return;
-
-    console.log('📡 Iniciando listener para:', citaIdParam);
-
     const citaRef = doc(db, 'citas', citaIdParam);
-    
-    unsubscribe.current = onSnapshot(
-      citaRef, 
-      (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          console.log('🔄 Datos actualizados:', data);
-          
-          setCitaData(data);
-          
-          const dias = calcularDiasHastaCita(data.fecha);
-          setDiasHastaCita(dias);
-          
-          if (dias === 0) {
-            setMensajeFecha('');
-          } else if (dias === 1) {
-            setMensajeFecha('mañana');
-          } else if (dias === 2) {
-            setMensajeFecha('pasado mañana');
-          } else if (dias > 2) {
-            setMensajeFecha(`en ${dias} días`);
-          }
-          
-          // Verificar si todos los servicios están completados
-          const servicios = data.servicios || [];
-          const estados_servicios = data.estados_servicios || {};
-          
-          const todosCompletados = servicios.length > 0 && servicios.every(s => 
-            estados_servicios[s] === 'completado'
-          );
-          
-          setCitaCompletada(todosCompletados || data.estado === 'completada');
-        } else {
-          console.log('⚠️ Cita no encontrada');
-        }
-      }, 
-      (error) => {
-        console.error('❌ Error en listener:', error);
-      }
-    );
+    unsubscribe.current = onSnapshot(citaRef, (docSnap) => {
+      if (!docSnap.exists()) return;
+      const data = docSnap.data();
+      setCitaData(data);
+      const dias = calcularDiasHastaCita(data.fecha);
+      setDiasHastaCita(dias);
+      setCitaCompletada(
+        (data.servicios || []).every((s) => data.estados_servicios?.[s] === 'completado') ||
+        data.estado === 'completada'
+      );
+    });
   };
 
-  // Lifecycle
+  // 🔹 Efectos
   useEffect(() => {
-    console.log('═══════════════════════════════════════');
-    console.log('🚀 Componente montado');
-    console.log('═══════════════════════════════════════');
-    
     inicializarComponente();
-    registerForPushNotifications();
-
-    return () => {
-      if (unsubscribe.current) {
-        console.log('🔴 Desconectando listener');
-        unsubscribe.current();
-      }
-    };
+    return () => unsubscribe.current && unsubscribe.current();
   }, []);
 
   useEffect(() => {
-    const subscription = AppState.addEventListener('change', nextAppState => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
       appState.current = nextAppState;
     });
-
     return () => subscription.remove();
   }, []);
 
-  // Funciones de contacto
+  // 🔹 Funciones de contacto
   const handleLlamar = async () => {
     const phoneNumber = `tel:${SALON_INFO.telefono}`;
-    try {
-      const supported = await Linking.canOpenURL(phoneNumber);
-      if (supported) {
-        await Linking.openURL(phoneNumber);
-      } else {
-        Alert.alert('Error', 'No se puede realizar llamadas');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'No se pudo realizar la llamada');
-    }
+    const supported = await Linking.canOpenURL(phoneNumber);
+    if (supported) Linking.openURL(phoneNumber);
+    else Alert.alert('Error', 'No se puede realizar llamadas');
   };
 
   const handleEnviarMensaje = async () => {
-    const nombreMascota = citaData?.mascota_nombre || citaData?.mascota || 'mi mascota';
-    const mensaje = encodeURIComponent(
-      `Hola ${SALON_INFO.nombre}, necesito información sobre ${nombreMascota}`
-    );
+    const nombreMascota = citaData?.mascota_nombre || 'mi mascota';
+    const mensaje = encodeURIComponent(`Hola ${SALON_INFO.nombre}, necesito información sobre ${nombreMascota}`);
     const whatsappURL = `whatsapp://send?phone=${SALON_INFO.whatsapp}&text=${mensaje}`;
-
-    try {
-      const supported = await Linking.canOpenURL(whatsappURL);
-      if (supported) {
-        await Linking.openURL(whatsappURL);
-      } else {
-        Alert.alert('WhatsApp no disponible', '¿Llamar al salón?', [
-          { text: 'Cancelar', style: 'cancel' },
-          { text: 'Llamar', onPress: handleLlamar },
-        ]);
-      }
-    } catch (error) {
-      Alert.alert('Error', 'No se pudo abrir WhatsApp');
-    }
+    const supported = await Linking.canOpenURL(whatsappURL);
+    if (supported) Linking.openURL(whatsappURL);
+    else Alert.alert('WhatsApp no disponible');
   };
 
   const mostrarOpcionesContacto = () => {
@@ -351,26 +211,11 @@ const Seguimiento = ({ navigation, route }) => {
     ]);
   };
 
-  const registerForPushNotifications = async () => {
-    try {
-      const { status } = await Notifications.getPermissionsAsync();
-      if (status !== 'granted') {
-        await Notifications.requestPermissionsAsync();
-      }
-    } catch (error) {
-      console.error('Error con notificaciones:', error);
-    }
-  };
-
-  // Animaciones
+  // 🔹 Animaciones
   useEffect(() => {
     if (citaData) {
       const progreso = calcularProgreso(citaData.estados_servicios, citaData.servicios);
-      Animated.timing(progressAnim, {
-        toValue: progreso,
-        duration: 800,
-        useNativeDriver: false,
-      }).start();
+      Animated.timing(progressAnim, { toValue: progreso, duration: 800, useNativeDriver: false }).start();
     }
   }, [citaData]);
 
@@ -384,11 +229,6 @@ const Seguimiento = ({ navigation, route }) => {
     pulse.start();
     return () => pulse.stop();
   }, []);
-
-  const progressWidth = progressAnim.interpolate({
-    inputRange: [0, 100],
-    outputRange: ['0%', '100%'],
-  });
 
   // RENDERIZADO
   if (loading) {
@@ -705,7 +545,7 @@ const Seguimiento = ({ navigation, route }) => {
   );
 };
 
-export default Seguimiento;
+
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5F5F5' },
@@ -854,3 +694,5 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 });
+
+export default Seguimiento;
