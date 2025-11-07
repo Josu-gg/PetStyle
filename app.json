@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "PetStyle",
+    "slug": "PetStyle",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "assets/LogoPetstyle.jpg",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.josu001.PetStyle"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "f4b8f762-3a07-4922-b14c-d8b9f1c56eaf"
+      }
+    }
+  }
+}
