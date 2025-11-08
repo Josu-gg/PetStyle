@@ -19,7 +19,6 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   collection,
   query,
-  where,
   getDocs,
   doc,
   updateDoc,
@@ -34,14 +33,14 @@ const PanelPersonalCitas = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState('pendientes');
-  
+
   // Modal
   const [modalVisible, setModalVisible] = useState(false);
   const [citaSeleccionada, setCitaSeleccionada] = useState(null);
   const [nuevoHorario, setNuevoHorario] = useState('');
+  const [periodo, setPeriodo] = useState('AM');
   const [notasPersonal, setNotasPersonal] = useState('');
 
-  // Cargar citas al montar y cuando gana foco
   useFocusEffect(
     useCallback(() => {
       cargarCitas();
@@ -72,35 +71,31 @@ const PanelPersonalCitas = ({ navigation }) => {
     cargarCitas();
   };
 
-  // Abrir modal
   const abrirModalConfirmacion = (cita) => {
     setCitaSeleccionada(cita);
-    setNuevoHorario(cita.hora);
+    setNuevoHorario(cita.hora || '');
+    setPeriodo('AM');
     setNotasPersonal('');
     setModalVisible(true);
   };
 
-  // Confirmar cita
   const confirmarCita = async () => {
-    if (!citaSeleccionada) return;
+    if (!citaSeleccionada || !nuevoHorario) {
+      Alert.alert('Falta información', 'Debes ingresar una hora válida.');
+      return;
+    }
 
     try {
       const citaRef = doc(db, 'citas', citaSeleccionada.id);
       const updateData = {
         estado_confirmacion: 'confirmada',
         estado: 'confirmada',
-        hora_confirmada: nuevoHorario,
+        hora_confirmada: `${nuevoHorario} ${periodo}`,
         notas_personal: notasPersonal.trim() || null,
         confirmada_por: 'personal',
         confirmada_at: serverTimestamp(),
         updated_at: serverTimestamp(),
       };
-
-      if (nuevoHorario !== citaSeleccionada.hora) {
-        updateData.hora = nuevoHorario;
-        updateData.hora_original = citaSeleccionada.hora;
-        updateData.horario_modificado = true;
-      }
 
       await updateDoc(citaRef, updateData);
       Alert.alert('✅ Cita confirmada', 'La cita ha sido actualizada correctamente.');
@@ -111,7 +106,6 @@ const PanelPersonalCitas = ({ navigation }) => {
     }
   };
 
-  // Rechazar cita
   const rechazarCita = async (cita) => {
     Alert.alert(
       '⚠️ Rechazar Cita',
@@ -142,40 +136,6 @@ const PanelPersonalCitas = ({ navigation }) => {
     );
   };
 
-  const formatearFecha = (fechaISO) => {
-    if (!fechaISO) return 'Fecha no disponible';
-    try {
-      const [año, mes, dia] = fechaISO.split('-');
-      const fecha = new Date(año, mes - 1, dia);
-      const opciones = { weekday: 'short', day: 'numeric', month: 'short' };
-      return fecha.toLocaleDateString('es', opciones);
-    } catch {
-      return fechaISO;
-    }
-  };
-
-  const getEstadoColor = (estado) => {
-    switch (estado) {
-      case 'pendiente': return '#FFB300';
-      case 'confirmada': return '#4CAF50';
-      case 'en_proceso': return '#2196F3';
-      case 'completada': return '#9C27B0';
-      case 'cancelada': return '#E91E63';
-      default: return '#9E9E9E';
-    }
-  };
-
-  const getEstadoTexto = (estado) => {
-    switch (estado) {
-      case 'pendiente': return 'Pendiente';
-      case 'confirmada': return 'Confirmada';
-      case 'en_proceso': return 'En Proceso';
-      case 'completada': return 'Completada';
-      case 'cancelada': return 'Cancelada';
-      default: return estado;
-    }
-  };
-
   const filtrarCitas = () => {
     switch (filter) {
       case 'pendientes':
@@ -189,6 +149,8 @@ const PanelPersonalCitas = ({ navigation }) => {
     }
   };
 
+  const citasFiltradas = filtrarCitas();
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -197,8 +159,6 @@ const PanelPersonalCitas = ({ navigation }) => {
       </View>
     );
   }
-
-  const citasFiltradas = filtrarCitas();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -209,20 +169,171 @@ const PanelPersonalCitas = ({ navigation }) => {
             <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Gestión de Citas</Text>
-          <TouchableOpacity onPress={() => cargarCitas()}>
+          <TouchableOpacity onPress={cargarCitas}>
             <Ionicons name="refresh" size={28} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
         <Text style={styles.headerSubtitle}>Panel de administración</Text>
       </LinearGradient>
 
-      {/* Contenido y estilos originales se mantienen igual */}
-      {/* ... resto del código visual igual ... */}
+      {/* Filtros */}
+      <View style={styles.filterContainer}>
+        {['pendientes', 'confirmadas', 'rechazadas'].map((f) => (
+          <TouchableOpacity
+            key={f}
+            style={[styles.filterButton, filter === f && styles.filterButtonActive]}
+            onPress={() => setFilter(f)}
+          >
+            <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>
+              {f.charAt(0).toUpperCase() + f.slice(1)}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Lista de citas */}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+        {citasFiltradas.length === 0 ? (
+          <View style={styles.noCitasContainer}>
+            <Ionicons name="calendar-outline" size={80} color="#E0E0E0" />
+            <Text style={styles.noCitasTitle}>No hay citas {filter}</Text>
+          </View>
+        ) : (
+          citasFiltradas.map((cita) => (
+            <View key={cita.id} style={styles.citaCard}>
+              <View style={styles.citaHeader}>
+                <View style={styles.mascotaInfo}>
+                  <Text style={styles.mascotaEmoji}>🐾</Text>
+                  <View style={styles.mascotaTexto}>
+                    <Text style={styles.mascotaNombre}>{cita.mascota}</Text>
+                    <Text style={styles.mascotaRaza}>{cita.servicio}</Text>
+                  </View>
+                </View>
+                <View style={[styles.estadoBadge, { backgroundColor: getEstadoColor(cita.estado_confirmacion) }]}>
+                  <Text style={styles.estadoText}>{getEstadoTexto(cita.estado_confirmacion)}</Text>
+                </View>
+              </View>
+
+              <View style={styles.citaInfo}>
+                <View style={styles.infoRow}>
+                  <Ionicons name="calendar-outline" size={18} color="#FF6B9D" />
+                  <Text style={styles.infoText}>Fecha: {cita.fecha}</Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Ionicons name="time-outline" size={18} color="#FF6B9D" />
+                  <Text style={styles.infoText}>
+                    Hora: {cita.hora_confirmada || cita.hora || 'Sin asignar'}
+                  </Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Ionicons name="person-outline" size={18} color="#FF6B9D" />
+                  <Text style={styles.infoText}>Cliente: {cita.nombre_cliente}</Text>
+                </View>
+              </View>
+
+              {cita.estado_confirmacion === 'pendiente' && (
+                <View style={styles.citaAcciones}>
+                  <TouchableOpacity
+                    style={styles.confirmarButton}
+                    onPress={() => abrirModalConfirmacion(cita)}
+                  >
+                    <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" />
+                    <Text style={styles.confirmarButtonText}>Confirmar</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.rechazarButton}
+                    onPress={() => rechazarCita(cita)}
+                  >
+                    <Ionicons name="close-circle-outline" size={18} color="#FFFFFF" />
+                    <Text style={styles.rechazarButtonText}>Rechazar</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          ))
+        )}
+      </ScrollView>
+
+      {/* Modal Confirmación */}
+      <Modal visible={modalVisible} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Confirmar cita</Text>
+              <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <Ionicons name="close" size={26} color="#757575" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalBody}>
+              <Text style={styles.modalLabel}>Nueva hora</Text>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <TextInput
+                  style={[styles.modalInput, { flex: 1 }]}
+                  placeholder="Ej. 10:30"
+                  value={nuevoHorario}
+                  onChangeText={setNuevoHorario}
+                />
+                <TouchableOpacity
+                  style={[styles.filterButton, periodo === 'AM' && styles.filterButtonActive]}
+                  onPress={() => setPeriodo('AM')}
+                >
+                  <Text style={[styles.filterText, periodo === 'AM' && styles.filterTextActive]}>AM</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.filterButton, periodo === 'PM' && styles.filterButtonActive]}
+                  onPress={() => setPeriodo('PM')}
+                >
+                  <Text style={[styles.filterText, periodo === 'PM' && styles.filterTextActive]}>PM</Text>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={[styles.modalLabel, { marginTop: 20 }]}>Notas del personal</Text>
+              <TextInput
+                style={[styles.modalInput, styles.modalTextArea]}
+                multiline
+                placeholder="Agrega alguna nota u observación (opcional)"
+                value={notasPersonal}
+                onChangeText={setNotasPersonal}
+              />
+
+              <TouchableOpacity style={styles.modalConfirmButton} onPress={confirmarCita}>
+                <LinearGradient colors={['#FF6B9D', '#E91E63']} style={styles.modalConfirmGradient}>
+                  <Ionicons name="checkmark-circle" size={22} color="#FFFFFF" />
+                  <Text style={styles.modalConfirmText}>Confirmar cita</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
 
 export default PanelPersonalCitas;
+
+// 🟣 FUNCIONES AUXILIARES
+const getEstadoColor = (estado) => {
+  switch (estado) {
+    case 'pendiente': return '#FFB300';
+    case 'confirmada': return '#4CAF50';
+    case 'rechazada': return '#E91E63';
+    default: return '#9E9E9E';
+  }
+};
+const getEstadoTexto = (estado) => {
+  switch (estado) {
+    case 'pendiente': return 'Pendiente';
+    case 'confirmada': return 'Confirmada';
+    case 'rechazada': return 'Rechazada';
+    default: return estado;
+  }
+};
 
 
 const styles = StyleSheet.create({

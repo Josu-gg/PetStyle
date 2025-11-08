@@ -17,7 +17,6 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../Config/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { registerForPushNotificationsAsync } from '../utils/notificationService';
 import { useFocusEffect } from '@react-navigation/native'; // 👈 agregado
 
 export default function Login({ navigation }) {

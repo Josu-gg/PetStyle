@@ -13,31 +13,19 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Notifications from 'expo-notifications';
-
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
 
 const Configuracion = ({ navigation }) => {
   const [notificaciones, setNotificaciones] = useState(true);
   const [recordatorios, setRecordatorios] = useState(true);
-  
-  //  Estados para el rol del usuario
   const [userRole, setUserRole] = useState(null);
   const [userData, setUserData] = useState(null);
 
   useEffect(() => {
     cargarPreferencias();
     cargarDatosUsuario();
-    solicitarPermisosNotificaciones();
   }, []);
 
-  // ✨ Cargar datos y rol del usuario
+  // Cargar datos del usuario
   const cargarDatosUsuario = async () => {
     try {
       const userData = await AsyncStorage.getItem('user_data');
@@ -52,30 +40,11 @@ const Configuracion = ({ navigation }) => {
     }
   };
 
-  const solicitarPermisosNotificaciones = async () => {
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-    
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-    
-    if (finalStatus !== 'granted') {
-      Alert.alert(
-        'Permisos requeridos',
-        'Para recibir notificaciones, debes habilitar los permisos en la configuración de tu dispositivo.'
-      );
-      setNotificaciones(false);
-      await AsyncStorage.setItem('notificaciones', 'false');
-    }
-  };
-
+  // Guardar y cargar preferencias locales
   const cargarPreferencias = async () => {
     try {
       const notif = await AsyncStorage.getItem('notificaciones');
       const record = await AsyncStorage.getItem('recordatorios');
-
       if (notif !== null) setNotificaciones(notif === 'true');
       if (record !== null) setRecordatorios(record === 'true');
     } catch (error) {
@@ -84,29 +53,8 @@ const Configuracion = ({ navigation }) => {
   };
 
   const handleNotificacionesToggle = async (value) => {
-    if (value) {
-      const { status } = await Notifications.getPermissionsAsync();
-      if (status !== 'granted') {
-        await solicitarPermisosNotificaciones();
-        return;
-      }
-    }
-    
     setNotificaciones(value);
     await AsyncStorage.setItem('notificaciones', value.toString());
-    
-    if (value) {
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: "✅ Notificaciones activadas",
-          body: "Ahora recibirás alertas importantes de PetStyle",
-          data: { type: 'config' },
-        },
-        trigger: { seconds: 2 },
-      });
-    } else {
-      await Notifications.cancelAllScheduledNotificationsAsync();
-    }
   };
 
   const handleRecordatoriosToggle = async (value) => {
@@ -117,18 +65,11 @@ const Configuracion = ({ navigation }) => {
       );
       return;
     }
-    
     setRecordatorios(value);
     await AsyncStorage.setItem('recordatorios', value.toString());
-    
-    if (value) {
-      Alert.alert(
-        'Recordatorios activados',
-        'Recibirás recordatorios para vacunas, medicinas y citas de tus mascotas.'
-      );
-    }
   };
 
+  // Cerrar sesión
   const handleCerrarSesion = () => {
     Alert.alert(
       'Cerrar Sesión',
@@ -192,33 +133,25 @@ const Configuracion = ({ navigation }) => {
   return (
     <View style={[stylesConfig.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="dark-content" />
-      
-      <LinearGradient
-        colors={['#FF6B9D', '#E91E63']}
-        style={stylesConfig.header}
-      >
+      <LinearGradient colors={['#FF6B9D', '#E91E63']} style={stylesConfig.header}>
         <View style={stylesConfig.headerTop}>
-          <TouchableOpacity 
-            onPress={() => navigation.goBack()}
-            style={stylesConfig.backButton}
-          >
+          <TouchableOpacity onPress={() => navigation.goBack()} style={stylesConfig.backButton}>
             <Ionicons name="chevron-back" size={28} color="#FFFFFF" />
           </TouchableOpacity>
           <Text style={stylesConfig.headerTitle}>Configuración</Text>
           <View style={stylesConfig.backButton} />
         </View>
-        
-        {/* Mostrar nombre y rol del usuario */}
+
         {userData && (
           <View style={stylesConfig.userInfoHeader}>
             <Text style={stylesConfig.userName}>
               {userData.nombres} {userData.apellidos}
             </Text>
             <View style={stylesConfig.roleBadgeHeader}>
-              <Ionicons 
-                name={userRole === 'personal' ? 'briefcase' : 'person'} 
-                size={14} 
-                color="#FFFFFF" 
+              <Ionicons
+                name={userRole === 'personal' ? 'briefcase' : 'person'}
+                size={14}
+                color="#FFFFFF"
               />
               <Text style={stylesConfig.roleTextHeader}>
                 {userRole === 'personal' ? 'Personal' : 'Cliente'}
@@ -228,11 +161,7 @@ const Configuracion = ({ navigation }) => {
         )}
       </LinearGradient>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={stylesConfig.scrollContent}
-      >
-        {/* Perfil */}
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={stylesConfig.scrollContent}>
         <SettingSection title="PERFIL">
           <SettingItem
             icon="person-outline"
@@ -240,8 +169,7 @@ const Configuracion = ({ navigation }) => {
             subtitle="Nombre, foto y más"
             onPress={() => navigation.navigate('EditarPerfil')}
           />
-          
-          {/* ✨ SOLO CLIENTES VEN "MIS MASCOTAS" */}
+
           {userRole === 'cliente' && (
             <SettingItem
               icon="paw-outline"
@@ -252,7 +180,7 @@ const Configuracion = ({ navigation }) => {
           )}
         </SettingSection>
 
-        {/* Notificaciones */}
+        {/* Switches (funcionan localmente, sin expo-notifications) */}
         <SettingSection title="NOTIFICACIONES">
           <SettingItem
             icon="notifications-outline"
@@ -282,7 +210,6 @@ const Configuracion = ({ navigation }) => {
           />
         </SettingSection>
 
-        {/* General */}
         <SettingSection title="GENERAL">
           <SettingItem
             icon="shield-checkmark-outline"
@@ -296,12 +223,6 @@ const Configuracion = ({ navigation }) => {
             onPress={() => navigation.navigate('TerminoCD')}
           />
           <SettingItem
-            icon="help-circle-outline"
-            title="Ayuda y Soporte"
-            subtitle="Centro de ayuda"
-            onPress={() => Alert.alert('Ayuda', 'Contáctanos en soporte@petstyle.com')}
-          />
-          <SettingItem
             icon="information-circle-outline"
             title="Acerca de"
             subtitle="Versión 1.0.0"
@@ -309,7 +230,6 @@ const Configuracion = ({ navigation }) => {
           />
         </SettingSection>
 
-        {/* Botón de Cerrar Sesión */}
         <View style={stylesConfig.actionButtons}>
           <TouchableOpacity
             style={[stylesConfig.logoutButton, { backgroundColor: colors.card }]}
@@ -332,9 +252,7 @@ const Configuracion = ({ navigation }) => {
 export default Configuracion;
 
 const stylesConfig = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
     paddingTop: Platform.OS === 'ios' ? 50 : 40,
     paddingBottom: 20,
@@ -359,16 +277,8 @@ const stylesConfig = StyleSheet.create({
     color: '#FFFFFF',
     textAlign: 'center',
   },
-  userInfoHeader: {
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 6,
-  },
+  userInfoHeader: { alignItems: 'center', marginTop: 8 },
+  userName: { fontSize: 16, fontWeight: '600', color: '#FFFFFF', marginBottom: 6 },
   roleBadgeHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -378,25 +288,10 @@ const stylesConfig = StyleSheet.create({
     borderRadius: 12,
     gap: 6,
   },
-  roleTextHeader: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    marginBottom: 12,
-    marginLeft: 4,
-  },
+  roleTextHeader: { fontSize: 12, fontWeight: '600', color: '#FFFFFF' },
+  scrollContent: { padding: 20, paddingBottom: 40 },
+  section: { marginBottom: 24 },
+  sectionTitle: { fontSize: 12, fontWeight: '700', marginBottom: 12, marginLeft: 4 },
   sectionContent: {
     borderRadius: 16,
     overflow: 'hidden',
@@ -414,11 +309,7 @@ const stylesConfig = StyleSheet.create({
     paddingHorizontal: 16,
     borderBottomWidth: 1,
   },
-  settingLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
+  settingLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   iconContainer: {
     width: 40,
     height: 40,
@@ -428,21 +319,10 @@ const stylesConfig = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
-  settingText: {
-    flex: 1,
-  },
-  settingTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  settingSubtitle: {
-    fontSize: 13,
-  },
-  actionButtons: {
-    marginTop: 12,
-    gap: 12,
-  },
+  settingText: { flex: 1 },
+  settingTitle: { fontSize: 16, fontWeight: '600', marginBottom: 2 },
+  settingSubtitle: { fontSize: 13 },
+  actionButtons: { marginTop: 12, gap: 12 },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -453,15 +333,6 @@ const stylesConfig = StyleSheet.create({
     borderColor: '#FF6B9D',
     gap: 8,
   },
-  logoutText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FF6B9D',
-  },
-  versionText: {
-    textAlign: 'center',
-    fontSize: 12,
-    marginTop: 24,
-    lineHeight: 18,
-  },
+  logoutText: { fontSize: 16, fontWeight: '600', color: '#FF6B9D' },
+  versionText: { textAlign: 'center', fontSize: 12, marginTop: 24, lineHeight: 18 },
 });

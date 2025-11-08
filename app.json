@@ -4,11 +4,11 @@
     "slug": "PetStyle",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "assets/PetStyle-icon.png",
+    "icon": "./assets/PetStyle-icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "assets/PetStyle-icon.png",
+      "image": "./assets/PetStyle-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -17,7 +17,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "assets/PetStyle-icon.png",
+        "foregroundImage": "./assets/PetStyle-icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
