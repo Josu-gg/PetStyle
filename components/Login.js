@@ -17,7 +17,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../Config/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from '@react-navigation/native'; // 👈 agregado
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function Login({ navigation }) {
   const [email, setEmail] = useState('');

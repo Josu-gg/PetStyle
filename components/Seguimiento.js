@@ -299,6 +299,10 @@ const Seguimiento = ({ navigation, route }) => {
   const estadosServicios = citaData.estados_servicios || {};
   
   const progreso = calcularProgreso(estadosServicios, serviciosArray);
+  const progressWidth = progressAnim.interpolate({
+    inputRange: [0, 100],
+    outputRange: ['0%', '100%'],
+  });
 
   // Si la cita NO es hoy
   if (diasHastaCita > 0) {
@@ -322,6 +326,12 @@ const Seguimiento = ({ navigation, route }) => {
             <View style={styles.mascotaInfo}>
               <Text style={styles.mascotaNombre}>{nombreMascota}</Text>
               <Text style={styles.mascotaRaza}>{razaMascota}</Text>
+              {citaData.nombre_trabajador && (
+                <View style={styles.trabajadorBadge}>
+                  <Ionicons name="person" size={14} color="#FF6B9D" />
+                  <Text style={styles.trabajadorText}>Atendido por: {citaData.nombre_trabajador}</Text>
+                </View>
+              )}
             </View>
           </View>
         </LinearGradient>
@@ -406,6 +416,12 @@ const Seguimiento = ({ navigation, route }) => {
           <View style={styles.mascotaInfo}>
             <Text style={styles.mascotaNombre}>{nombreMascota}</Text>
             <Text style={styles.mascotaRaza}>{razaMascota}</Text>
+            {citaData.nombre_trabajador && (
+              <View style={styles.trabajadorBadge}>
+                <Ionicons name="person" size={14} color="#FF6B9D" />
+                <Text style={styles.trabajadorText}>Atendido por: {citaData.nombre_trabajador}</Text>
+              </View>
+            )}
           </View>
         </View>
       </LinearGradient>
@@ -573,6 +589,18 @@ const styles = StyleSheet.create({
   mascotaInfo: { flex: 1 },
   mascotaNombre: { fontSize: 20, fontWeight: '700', color: '#FFFFFF', marginBottom: 4 },
   mascotaRaza: { fontSize: 14, color: 'rgba(255, 255, 255, 0.9)' },
+  trabajadorBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginTop: 8,
+    alignSelf: 'flex-start',
+    gap: 6,
+  },
+  trabajadorText: { fontSize: 12, fontWeight: '600', color: '#FF6B9D' },
   content: { flex: 1 },
   
   noCitaHoyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
@@ -603,96 +631,89 @@ const styles = StyleSheet.create({
   completadoGradient: { padding: 32, alignItems: 'center' },
   completadoTitle: { fontSize: 28, fontWeight: '700', color: '#FFFFFF', marginTop: 16, marginBottom: 12 },
   completadoText: { fontSize: 16, color: 'rgba(255, 255, 255, 0.95)', textAlign: 'center', lineHeight: 24, marginBottom: 24 },
-  llamarButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 12, gap: 8 },
-  llamarText: { fontSize: 16, fontWeight: '600', color: '#4CAF50' },
-  
-  progressSection: { padding: 20, paddingBottom: 10 },
-  progressHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  progressTitle: { fontSize: 18, fontWeight: '700', color: '#212121' },
-  progressPercent: { fontSize: 18, fontWeight: '700', color: '#FF6B9D' },
-  progressBarContainer: { height: 8, backgroundColor: '#E0E0E0', borderRadius: 4, overflow: 'hidden' },
-  progressBarFill: { height: '100%', borderRadius: 4 },
-  
-  serviciosSection: { paddingHorizontal: 20, paddingTop: 10 },
-  serviciosSectionTitle: { fontSize: 18, fontWeight: '700', color: '#212121', marginBottom: 16 },
-  
-  servicioCard: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-    alignItems: 'center',
-  },
-  servicioIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  servicioInfo: { flex: 1 },
-  servicioHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  servicioNombre: { fontSize: 16, fontWeight: '600', color: '#9E9E9E' },
-  servicioNombreActive: { color: '#212121' },
-  servicioCompletado: { textDecorationLine: 'line-through', color: '#9E9E9E' },
-  servicioDescripcion: { fontSize: 14, color: '#BDBDBD' },
-  servicioDescripcionCompleted: { color: '#4CAF50', fontWeight: '600' },
-  servicioDescripcionCurrent: { color: '#FF9800', fontWeight: '600' },
-  
-  currentBadge: {
-    backgroundColor: '#FF6B9D',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  currentBadgeText: { fontSize: 10, color: '#FFFFFF', fontWeight: '700' },
-
-  actionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 20,
-    paddingHorizontal: 20,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  actionButtonText: { fontSize: 15, fontWeight: '600', color: '#212121' },
-  
-  comentariosSection: {
-    marginTop: 20,
-    paddingHorizontal: 20,
-  },
-  comentariosText: {
-    fontSize: 14,
-    color: '#616161',
-    backgroundColor: '#F5F5F5',
-    padding: 12,
-    borderRadius: 8,
-    lineHeight: 20,
-  },
+  llamarButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 12, gap:8 },
+llamarText: { fontSize: 16, fontWeight: '600', color: '#4CAF50' },
+progressSection: { padding: 20, paddingBottom: 10 },
+progressHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+progressTitle: { fontSize: 18, fontWeight: '700', color: '#212121' },
+progressPercent: { fontSize: 18, fontWeight: '700', color: '#FF6B9D' },
+progressBarContainer: { height: 8, backgroundColor: '#E0E0E0', borderRadius: 4, overflow: 'hidden' },
+progressBarFill: { height: '100%', borderRadius: 4 },
+serviciosSection: { paddingHorizontal: 20, paddingTop: 10 },
+serviciosSectionTitle: { fontSize: 18, fontWeight: '700', color: '#212121', marginBottom: 16 },
+servicioCard: {
+flexDirection: 'row',
+backgroundColor: '#FFFFFF',
+borderRadius: 16,
+padding: 16,
+marginBottom: 12,
+shadowColor: '#000',
+shadowOffset: { width: 0, height: 2 },
+shadowOpacity: 0.08,
+shadowRadius: 8,
+elevation: 3,
+alignItems: 'center',
+},
+servicioIconContainer: {
+width: 48,
+height: 48,
+borderRadius: 24,
+justifyContent: 'center',
+alignItems: 'center',
+marginRight: 16,
+},
+servicioInfo: { flex: 1 },
+servicioHeader: {
+flexDirection: 'row',
+alignItems: 'center',
+justifyContent: 'space-between',
+marginBottom: 4,
+},
+servicioNombre: { fontSize: 16, fontWeight: '600', color: '#9E9E9E' },
+servicioNombreActive: { color: '#212121' },
+servicioCompletado: { textDecorationLine: 'line-through', color: '#9E9E9E' },
+servicioDescripcion: { fontSize: 14, color: '#BDBDBD' },
+servicioDescripcionCompleted: { color: '#4CAF50', fontWeight: '600' },
+servicioDescripcionCurrent: { color: '#FF9800', fontWeight: '600' },
+currentBadge: {
+backgroundColor: '#FF6B9D',
+borderRadius: 8,
+paddingHorizontal: 8,
+paddingVertical: 2,
+},
+currentBadgeText: { fontSize: 10, color: '#FFFFFF', fontWeight: '700' },
+actionsContainer: {
+flexDirection: 'row',
+justifyContent: 'space-around',
+marginTop: 20,
+paddingHorizontal: 20,
+},
+actionButton: {
+flexDirection: 'row',
+alignItems: 'center',
+backgroundColor: '#FFFFFF',
+borderRadius: 12,
+paddingVertical: 12,
+paddingHorizontal: 20,
+gap: 8,
+shadowColor: '#000',
+shadowOffset: { width: 0, height: 3 },
+shadowOpacity: 0.1,
+shadowRadius: 6,
+elevation: 3,
+},
+actionButtonText: { fontSize: 15, fontWeight: '600', color: '#212121' },
+comentariosSection: {
+marginTop: 20,
+paddingHorizontal: 20,
+},
+comentariosText: {
+fontSize: 14,
+color: '#616161',
+backgroundColor: '#F5F5F5',
+padding: 12,
+borderRadius: 8,
+lineHeight: 20,
+},
 });
-
 export default Seguimiento;

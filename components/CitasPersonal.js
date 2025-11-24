@@ -40,6 +40,7 @@ const PanelPersonalCitas = ({ navigation }) => {
   const [nuevoHorario, setNuevoHorario] = useState('');
   const [periodo, setPeriodo] = useState('AM');
   const [notasPersonal, setNotasPersonal] = useState('');
+  const [nombreTrabajador, setNombreTrabajador] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -76,12 +77,18 @@ const PanelPersonalCitas = ({ navigation }) => {
     setNuevoHorario(cita.hora || '');
     setPeriodo('AM');
     setNotasPersonal('');
+    setNombreTrabajador('');
     setModalVisible(true);
   };
 
   const confirmarCita = async () => {
     if (!citaSeleccionada || !nuevoHorario) {
       Alert.alert('Falta información', 'Debes ingresar una hora válida.');
+      return;
+    }
+
+    if (!nombreTrabajador.trim()) {
+      Alert.alert('Falta información', 'Debes ingresar tu nombre.');
       return;
     }
 
@@ -92,6 +99,7 @@ const PanelPersonalCitas = ({ navigation }) => {
         estado: 'confirmada',
         hora_confirmada: `${nuevoHorario} ${periodo}`,
         notas_personal: notasPersonal.trim() || null,
+        nombre_trabajador: nombreTrabajador.trim(),
         confirmada_por: 'personal',
         confirmada_at: serverTimestamp(),
         updated_at: serverTimestamp(),
@@ -270,7 +278,15 @@ const PanelPersonalCitas = ({ navigation }) => {
             </View>
 
             <View style={styles.modalBody}>
-              <Text style={styles.modalLabel}>Nueva hora</Text>
+              <Text style={styles.modalLabel}>Tu nombre</Text>
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Ej. María García"
+                value={nombreTrabajador}
+                onChangeText={setNombreTrabajador}
+              />
+
+              <Text style={[styles.modalLabel, { marginTop: 20 }]}>Nueva hora</Text>
               <View style={{ flexDirection: 'row', gap: 10 }}>
                 <TextInput
                   style={[styles.modalInput, { flex: 1 }]}
