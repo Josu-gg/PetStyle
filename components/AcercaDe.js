@@ -61,7 +61,7 @@ const AcercaDe = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Logo/Icono de la App */}
+        {/* Logo/Icono */}
         <View style={styles.logoContainer}>
           <View style={styles.logoCircle}>
             <Text style={styles.logoEmoji}>🐾</Text>
@@ -73,9 +73,9 @@ const AcercaDe = ({ navigation }) => {
         {/* Descripción */}
         <View style={styles.descriptionCard}>
           <Text style={styles.descriptionText}>
-           PetStyle es tu compañero ideal para el cuidado y la belleza de tu mascota.
-           Gestiona citas para baños, peinados, limpiezas dentales y tratamientos especiales,
-           todo en un solo lugar para que tu peludo siempre luzca y se sienta increíble.
+            PetStyle es tu compañero ideal para el cuidado y la belleza de tu mascota.
+            Gestiona citas para baños, peinados, limpiezas dentales y tratamientos especiales,
+            todo en un solo lugar para que tu peludo siempre luzca y se sienta increíble.
           </Text>
         </View>
 
@@ -90,7 +90,7 @@ const AcercaDe = ({ navigation }) => {
           />
           <InfoCard
             icon="medkit-outline"
-            title="Historial de citas"
+            title="Historial de Citas"
             content="Registro completo de tus citas"
             color="#E91E63"
           />
@@ -111,20 +111,23 @@ const AcercaDe = ({ navigation }) => {
         {/* Contacto */}
         <Text style={styles.sectionTitle}>CONTÁCTANOS</Text>
         <View style={styles.contactContainer}>
+
+          {/* Correo */}
           <ContactButton
             icon="mail-outline"
-            label="soporte@petStyle.com"
-            onPress={() => handleOpenURL('mailto:soporte@petStyle.com')}
+            label="soportepetstyle@gmail.com"
+            onPress={() => handleOpenURL('mailto:soportepetstyle@gmail.com')}
           />
-          <ContactButton
-            icon="globe-outline"
-            label="www.petStyle.com"
-            onPress={() => handleOpenURL('https://www.petStyle.com')}
-          />
+
+          {/* Instagram */}
           <ContactButton
             icon="logo-instagram"
-            label="@petStyle_app"
-            onPress={() => handleOpenURL('https://instagram.com/petStyle_app')}
+            label="@allqupetspa"
+            onPress={() =>
+              handleOpenURL(
+                'https://www.instagram.com/allqupetspa?igsh=M200b3diN2t5NXU0'
+              )
+            }
           />
         </View>
 
@@ -153,10 +156,7 @@ const AcercaDe = ({ navigation }) => {
 export default AcercaDe;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F5F5',
-  },
+  container: { flex: 1, backgroundColor: '#F5F5F5' },
   header: {
     paddingTop: Platform.OS === 'ios' ? 50 : 40,
     paddingBottom: 20,
@@ -180,14 +180,8 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     textAlign: 'center',
   },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginVertical: 30,
-  },
+  scrollContent: { padding: 20, paddingBottom: 40 },
+  logoContainer: { alignItems: 'center', marginVertical: 30 },
   logoCircle: {
     width: 100,
     height: 100,
@@ -201,20 +195,9 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 5,
   },
-  logoEmoji: {
-    fontSize: 50,
-  },
-  appName: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#212121',
-    marginTop: 16,
-  },
-  version: {
-    fontSize: 16,
-    color: '#757575',
-    marginTop: 4,
-  },
+  logoEmoji: { fontSize: 50 },
+  appName: { fontSize: 32, fontWeight: '700', color: '#212121', marginTop: 16 },
+  version: { fontSize: 16, color: '#757575', marginTop: 4 },
   descriptionCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
@@ -267,18 +250,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  infoTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#212121',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  infoContent: {
-    fontSize: 12,
-    color: '#757575',
-    textAlign: 'center',
-  },
+  infoTitle: { fontSize: 14, fontWeight: '600', color: '#212121', marginBottom: 4 },
+  infoContent: { fontSize: 12, color: '#757575', textAlign: 'center' },
   contactContainer: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
@@ -304,16 +277,8 @@ const styles = StyleSheet.create({
     color: '#424242',
     marginLeft: 12,
   },
-  legalContainer: {
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  legalText: {
-    fontSize: 12,
-    color: '#9E9E9E',
-    textAlign: 'center',
-    marginVertical: 4,
-  },
+  legalContainer: { alignItems: 'center', marginVertical: 20 },
+  legalText: { fontSize: 12, color: '#9E9E9E', textAlign: 'center', marginVertical: 4 },
   creditsCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -323,9 +288,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
-  creditsText: {
-    fontSize: 14,
-    color: '#757575',
-    fontWeight: '500',
-  },
+  creditsText: { fontSize: 14, color: '#757575', fontWeight: '500' },
 });
